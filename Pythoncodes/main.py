@@ -1,14 +1,20 @@
+import numpy as np
 import pandas as pd
+from sklearn.cluster import KMeans
 from sklearn.preprocessing import LabelEncoder
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
 
 # reading the csv file of the crimes in the boston.
-crimeData = pd.read_csv(
+crimeNormalData = pd.read_csv(
     r"C:\Users\patel\Documents\CS-5100 Foundation To Artificial Intelligence\Project-work\Pythoncodes\archive\crime.csv",
     encoding='latin-1')
 # datatype of the crime data
-print("file of the crime data: ", type(crimeData))
+print("file of the crime data: ", type(crimeNormalData))
 # reading  the first 10 files of the csv.
-print(crimeData.head(10))
+print(crimeNormalData.head(10))
 # reading the offense of crimes.
 offense = pd.read_csv(
     r"C:\Users\patel\Documents\CS-5100 Foundation To Artificial Intelligence\Project-work\Pythoncodes\archive\offense_codes.csv",
@@ -16,128 +22,140 @@ offense = pd.read_csv(
 # reading the first 10 files of the head of the
 print(offense.head(10))
 # description of the data of the crimes in the boston.
-print(crimeData.describe())
+print(crimeNormalData.describe())
 # description of the offense code in the boston.
 print(offense.describe())
 
 # checking the data types of the csv file.
-print(crimeData.dtypes)
+print(crimeNormalData.dtypes)
 
 # Total columns in the crime data
-columns = crimeData.columns
+columns = crimeNormalData.columns
 print("The columns of the crime data: \n", columns)
 
 # Total number of crimes in each district
-district_crime = crimeData['DISTRICT'].value_counts()
+district_crime = crimeNormalData['DISTRICT'].value_counts()
 print("The total number of crimes in each district: \n", district_crime)
 
 # Performing Exploratory Data Analysis
-nullCount = crimeData.isnull().sum()
+nullCount = crimeNormalData.isnull().sum()
 print("The values of the csv that are null: \n", nullCount)
 
 # checking the shape of the csv file.
-print("The shape of the data: ", crimeData.shape)
+print("The shape of the data: ", crimeNormalData.shape)
 
 # Drop rows where 'DISTRICT' is NaN
-crimeData = crimeData.dropna(subset=['DISTRICT'])
+crimeNormalData = crimeNormalData.dropna(subset=['DISTRICT'])
 
 # checking the description of the data.
-print(crimeData.describe())
+print(crimeNormalData.describe())
 
 # checking the null count after the drop of the data.
-nullCount = crimeData.isnull().sum()
+nullCount = crimeNormalData.isnull().sum()
 print("The values of the csv that are null: \n", nullCount)
 
 # Drop rows where 'DISTRICT' is NaN
-crimeData = crimeData.dropna(subset=['DISTRICT'])
+crimeNormalData = crimeNormalData.dropna(subset=['DISTRICT'])
 
 # checking the description of the data.
-print(crimeData.describe())
+print(crimeNormalData.describe())
 
 # Fill missing values for 'UCR_PART' and 'STREET' with mode
 for column in ['UCR_PART', 'STREET']:
-    crimeData[column].fillna(crimeData[column].mode()[0], inplace=True)
+    crimeNormalData[column].fillna(crimeNormalData[column].mode()[0], inplace=True)
 
 # Drop rows where 'STREET' is NaN
-crimeData = crimeData.dropna(subset=['STREET'])
+crimeNormalData = crimeNormalData.dropna(subset=['STREET'])
 
 # checking the description of the data.
-print(crimeData.describe())
+print(crimeNormalData.describe())
 
 # drop the location as lat and long is already given.
-crimeData = crimeData.drop('Location', axis=1)
+crimeNormalData = crimeNormalData.drop('Location', axis=1)
 # now checking the description of the data.
-print(crimeData.describe())
+print(crimeNormalData.describe())
 # checking whether the location is dropped or not.
-print(crimeData.columns)
+print(crimeNormalData.columns)
 
 # checking the null count after the drop of the data.
-nullCount = crimeData.isnull().sum()
+nullCount = crimeNormalData.isnull().sum()
 print("The values of the csv that are null: \n", nullCount)
 
 # Fill missing values for 'Lat' and 'Long' with mean
 for column in ['Lat', 'Long']:
-    crimeData[column].fillna(crimeData[column].mean(), inplace=True)
+    crimeNormalData[column].fillna(crimeNormalData[column].mean(), inplace=True)
 
 # Replace NaN values with 0 in 'SHOOTING' column
-crimeData['SHOOTING'].fillna(0, inplace=True)
+crimeNormalData['SHOOTING'].fillna(0, inplace=True)
 
 # Replace 'Y' with 1.4 in 'SHOOTING' column
-crimeData['SHOOTING'].replace('Y', 1, inplace=True)
-
-
+crimeNormalData['SHOOTING'].replace('Y', 1, inplace=True)
 
 # checking the null values of the data.
-nullCount = crimeData.isnull().sum()
+nullCount = crimeNormalData.isnull().sum()
 print("The values of the csv that are null: \n", nullCount)
 
 # converting categorical data to numerical data.
-value_count = crimeData['DAY_OF_WEEK'].value_counts()
+value_count = crimeNormalData['DAY_OF_WEEK'].value_counts()
 print("The value count of the DAY_OF_WEEK: \n", value_count)
 
 # Save the cleaned data to a new CSV file
-cleanCrimeData = crimeData.to_csv('crimeData_clean.csv', index=False)
-
+cleanCrimeData = crimeNormalData.to_csv('crimeData_clean.csv', index=False)
 
 # Create a dictionary to map days of the week to numerical values
 days_mapping = {'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5, 'Saturday': 6, 'Sunday': 7}
 
 # Use the map function to replace the days of the week with numerical values
-crimeData['DAY_OF_WEEK'] = crimeData['DAY_OF_WEEK'].map(days_mapping)
+crimeNormalData['DAY_OF_WEEK'] = crimeNormalData['DAY_OF_WEEK'].map(days_mapping)
 # Print some data.
-print(crimeData['DAY_OF_WEEK'].head())
+print(crimeNormalData['DAY_OF_WEEK'].head())
 
 # Create a dictionary to map UCR_PART to numerical values
 ucr_mapping = {'Part One': 1, 'Part Two': 2, 'Part Three': 3}
 # Use the map function to replace the UCR_PART with numerical values
-crimeData['UCR_PART'] = crimeData['UCR_PART'].map(ucr_mapping)
+crimeNormalData['UCR_PART'] = crimeNormalData['UCR_PART'].map(ucr_mapping)
 # Print some data.
-print(crimeData['UCR_PART'].head())
+print(crimeNormalData['UCR_PART'].head())
 
 # Create a label encoder
 encode = LabelEncoder()
 # Fit and transform the 'OFFENSE_CODE_GROUP' column
-crimeData['OFFENSE_CODE_GROUP'] = encode.fit_transform(crimeData['OFFENSE_CODE_GROUP'])
-crimeData['OFFENSE_DESCRIPTION'] = encode.fit_transform(crimeData['OFFENSE_DESCRIPTION'])
-crimeData['STREET'] = encode.fit_transform(crimeData['STREET'])
+crimeNormalData['OFFENSE_CODE_GROUP'] = encode.fit_transform(crimeNormalData['OFFENSE_CODE_GROUP'])
+crimeNormalData['OFFENSE_DESCRIPTION'] = encode.fit_transform(crimeNormalData['OFFENSE_DESCRIPTION'])
+crimeNormalData['INCIDENT_NUMBER'] = encode.fit_transform(crimeNormalData['INCIDENT_NUMBER'])
+crimeNormalData['DISTRICT'] = encode.fit_transform(crimeNormalData['DISTRICT'])
+crimeNormalData['STREET'] = encode.fit_transform(crimeNormalData['STREET'])
 # Print the first 5 rows to see the changes
-print(crimeData.head())
-print(crimeData['OFFENSE_DESCRIPTION'].head())
+print(crimeNormalData.head())
+print(crimeNormalData['OFFENSE_DESCRIPTION'].head())
+crimeNormalData.replace(' ', np.nan, inplace=True)
 
+# Drop the rows where at least one element is missing.
+crimeNormalData.dropna(inplace=True)
 # now we will save the normalized data into the csv file so that it can be used for the further analysis.
 # In the Machine Learning models.
-newCrimeData= crimeData.to_csv('crimeData_normal.csv', index=False)
+newCrimeData = crimeNormalData.to_csv('crimeData_normal.csv', index=False)
 
-# feature_column = 'Feature'
-#
-# # Find the minimum and maximum values of the feature
-# min_value = crimeData['OFFENSE_CODE'].min()
-# print(min_value)
-# max_value = crimeData['OFFENSE_CODE'].max()
-#
-# # Normalize the feature using Min-Max normalization
-# crimeData['Normalized_Feature'] = (crimeData['OFFENSE_CODE'] - min_value) / (max_value - min_value)
-# # Save the normalized data back to a CSV file
-# crimeData.to_csv('normalized_crime file.csv', index=False)
-# # Assuming your CSV has two columns named 'Feature1' and 'Feature2', adjust accordingly
-# X = crimeData[['REPORTING_AREA', 'OFFENSE_CODE']].values
+# Load the cleaned and normalized data
+crimeNormalData = pd.read_csv('crimeData_normal.csv')
+
+# Split the data into features (X) and target (y)
+# Assuming 'OFFENSE_CODE_GROUP' is the target and the rest are features
+X = crimeNormalData.drop('OFFENSE_CODE_GROUP', axis=1)
+y = crimeNormalData['OFFENSE_CODE_GROUP']
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Choose a machine learning model
+model = KMeans(n_clusters=3, random_state=42)
+
+# Train the model with the training data
+model.fit(X_train, y_train)
+
+# Make predictions
+predictions = model.predict(X_test)
+
+# Evaluate the model with the testing data
+accuracy = accuracy_score(y_test, predictions)
+print(f"Model Accuracy: {accuracy}")

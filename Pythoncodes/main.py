@@ -1,20 +1,23 @@
 import numpy as np
 import pandas as pd
+from folium import folium
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import LabelEncoder
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
-
+from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report
+import seaborn as sns
 # reading the csv file of the crimes in the boston.
-crimeNormalData = pd.read_csv(
+crimeData = pd.read_csv(
     r"C:\Users\patel\Documents\CS-5100 Foundation To Artificial Intelligence\Project-work\Pythoncodes\archive\crime.csv",
     encoding='latin-1')
 # datatype of the crime data
-print("file of the crime data: ", type(crimeNormalData))
+print("file of the crime data: ", type(crimeData))
 # reading  the first 10 files of the csv.
-print(crimeNormalData.head(10))
+print(crimeData.head(10))
 # reading the offense of crimes.
 offense = pd.read_csv(
     r"C:\Users\patel\Documents\CS-5100 Foundation To Artificial Intelligence\Project-work\Pythoncodes\archive\offense_codes.csv",
@@ -22,30 +25,30 @@ offense = pd.read_csv(
 # reading the first 10 files of the head of the
 print(offense.head(10))
 # description of the data of the crimes in the boston.
-print(crimeNormalData.describe())
+print(crimeData.describe())
 # description of the offense code in the boston.
 print(offense.describe())
 
 # checking the data types of the csv file.
-print(crimeNormalData.dtypes)
+print(crimeData.dtypes)
 
 # Total columns in the crime data
-columns = crimeNormalData.columns
+columns = crimeData.columns
 print("The columns of the crime data: \n", columns)
 
 # Total number of crimes in each district
-district_crime = crimeNormalData['DISTRICT'].value_counts()
+district_crime = crimeData['DISTRICT'].value_counts()
 print("The total number of crimes in each district: \n", district_crime)
 
 # Performing Exploratory Data Analysis
-nullCount = crimeNormalData.isnull().sum()
+nullCount = crimeData.isnull().sum()
 print("The values of the csv that are null: \n", nullCount)
 
 # checking the shape of the csv file.
-print("The shape of the data: ", crimeNormalData.shape)
+print("The shape of the data: ", crimeData.shape)
 
 # Drop rows where 'DISTRICT' is NaN
-crimeNormalData = crimeNormalData.dropna(subset=['DISTRICT'])
+crimeNormalData = crimeData.dropna(subset=['DISTRICT'])
 
 # checking the description of the data.
 print(crimeNormalData.describe())
@@ -63,6 +66,8 @@ print(crimeNormalData.describe())
 # Fill missing values for 'UCR_PART' and 'STREET' with mode
 for column in ['UCR_PART', 'STREET']:
     crimeNormalData[column].fillna(crimeNormalData[column].mode()[0], inplace=True)
+
+
 
 # Drop rows where 'STREET' is NaN
 crimeNormalData = crimeNormalData.dropna(subset=['STREET'])
@@ -82,8 +87,23 @@ nullCount = crimeNormalData.isnull().sum()
 print("The values of the csv that are null: \n", nullCount)
 
 # Fill missing values for 'Lat' and 'Long' with mean
-for column in ['Lat', 'Long']:
-    crimeNormalData[column].fillna(crimeNormalData[column].mean(), inplace=True)
+# for column in ['Lat', 'Long']:
+#     crimeNormalData[column].fillna(crimeNormalData[column].mean(), inplace=True)
+
+
+
+
+# Drop rows where 'Lat' and 'Long' are 0
+crimeNormalData = crimeNormalData[(crimeNormalData['Lat'] != 0) & (crimeNormalData['Long'] != 0)]
+
+
+
+
+
+
+
+
+
 
 # Replace NaN values with 0 in 'SHOOTING' column
 crimeNormalData['SHOOTING'].fillna(0, inplace=True)
@@ -123,6 +143,7 @@ encode = LabelEncoder()
 crimeNormalData['OFFENSE_CODE_GROUP'] = encode.fit_transform(crimeNormalData['OFFENSE_CODE_GROUP'])
 crimeNormalData['OFFENSE_DESCRIPTION'] = encode.fit_transform(crimeNormalData['OFFENSE_DESCRIPTION'])
 crimeNormalData['INCIDENT_NUMBER'] = encode.fit_transform(crimeNormalData['INCIDENT_NUMBER'])
+crimeNormalData['OCCURRED_ON_DATE'] = encode.fit_transform(crimeNormalData['OCCURRED_ON_DATE'])
 crimeNormalData['DISTRICT'] = encode.fit_transform(crimeNormalData['DISTRICT'])
 crimeNormalData['STREET'] = encode.fit_transform(crimeNormalData['STREET'])
 # Print the first 5 rows to see the changes
@@ -144,11 +165,15 @@ crimeNormalData = pd.read_csv('crimeData_normal.csv')
 X = crimeNormalData.drop('OFFENSE_CODE_GROUP', axis=1)
 y = crimeNormalData['OFFENSE_CODE_GROUP']
 
+
+print(crimeNormalData['OCCURRED_ON_DATE'].head())
+
+
 # Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=20)
 
 # Choose a machine learning model
-model = KMeans(n_clusters=3, random_state=42)
+model = KMeans(n_clusters=4, random_state=20)
 
 # Train the model with the training data
 model.fit(X_train, y_train)
@@ -159,3 +184,43 @@ predictions = model.predict(X_test)
 # Evaluate the model with the testing data
 accuracy = accuracy_score(y_test, predictions)
 print(f"Model Accuracy: {accuracy}")
+
+
+
+
+# Choose a machine learning model for classification
+clf = RandomForestClassifier(n_estimators=100, random_state=20)
+# Train the model with the training data
+clf.fit(X_train, y_train)
+# Make predictions
+predictions = clf.predict(X_test)
+# Evaluate the model with the testing data
+print(classification_report(y_test, predictions))
+# Choose a machine learning model for clustering
+model = KMeans(n_clusters=4, random_state=20)
+# Train the model with the training data
+model.fit(X_train)
+# Make predictions
+predictions = model.predict(X_test)
+# Add the predictions to your dataframe
+X_test['cluster'] = predictions
+# Print the first few rows of your dataframe to see the clusters
+print(X_test.head())
+
+cm = confusion_matrix(y_test, predictions)
+
+# Convert the confusion matrix to a dataframe
+cm_df = pd.DataFrame(cm)
+
+# Visualize the confusion matrix using a heatmap
+plt.figure(figsize=(10,7))
+sns.heatmap(cm_df, annot=True, fmt='g')
+plt.title('Confusion matrix of the classifier')
+plt.xlabel('Predicted')
+plt.ylabel('True')
+plt.show()
+
+
+
+
+
